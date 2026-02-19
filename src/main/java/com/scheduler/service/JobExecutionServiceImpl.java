@@ -1,0 +1,99 @@
+package com.scheduler.service;
+
+import com.scheduler.domain.Job;
+import com.scheduler.domain.JobExecution;
+import com.scheduler.domain.JobExecutionStatus;
+import com.scheduler.repository.JobExecutionRepository;
+import com.scheduler.repository.JobRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.support.CronExpression;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class JobExecutionServiceImpl implements JobExecutionService {
+
+    private final JobRepository jobRepository;
+    private final JobExecutionRepository jobExecutionRepository;
+
+    @Override
+    @Transactional
+    public void executeJob(Job job) {
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. Create JobExecution entity with STARTED status
+        JobExecution execution = JobExecution.builder()
+                .job(job)
+                .status(JobExecutionStatus.STARTED)
+                .startTime(now)
+                .retryAttempt(job.getRetryCount())
+                .build();
+
+        execution = jobExecutionRepository.save(execution);
+
+        try {
+            // 2. Simulate execution: print payload and sleep 1 second
+            log.info("Executing job: {} - Payload: {}", job.getName(), job.getPayload());
+            Thread.sleep(1000);
+
+            // 3. Simulate random failure (30% chance)
+            boolean success = Math.random() > 0.3;
+
+            if (success) {
+                // Success case
+                execution.setStatus(JobExecutionStatus.SUCCESS);
+                execution.setEndTime(LocalDateTime.now());
+
+                job.setRetryCount(0);
+                job.setNextExecutionTime(computeNextExecutionTime(job.getCronExpression(), now));
+                jobRepository.save(job);
+
+                log.info("Job {} executed successfully. Next execution: {}", job.getName(), job.getNextExecutionTime());
+            } else {
+                // Failure case
+                execution.setStatus(JobExecutionStatus.FAILED);
+                execution.setEndTime(LocalDateTime.now());
+                execution.setErrorMessage("Simulated random failure");
+
+                job.setRetryCount(job.getRetryCount() + 1);
+                jobRepository.save(job);
+
+                log.warn("Job {} execution failed. Retry count: {}", job.getName(), job.getRetryCount());
+            }
+
+            jobExecutionRepository.save(execution);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            execution.setStatus(JobExecutionStatus.FAILED);
+            execution.setEndTime(LocalDateTime.now());
+            execution.setErrorMessage("Execution interrupted: " + e.getMessage());
+            jobExecutionRepository.save(execution);
+            log.error("Job {} execution interrupted", job.getName(), e);
+        } catch (Exception e) {
+            execution.setStatus(JobExecutionStatus.FAILED);
+            execution.setEndTime(LocalDateTime.now());
+            execution.setErrorMessage("Execution error: " + e.getMessage());
+            jobExecutionRepository.save(execution);
+            log.error("Job {} execution failed with error", job.getName(), e);
+        }
+    }
+
+    private LocalDateTime computeNextExecutionTime(String cronExpression, LocalDateTime currentTime) {
+        try {
+            return CronExpression.parse(cronExpression)
+                    .next(currentTime.atZone(ZoneId.systemDefault()))
+                    .toLocalDateTime();
+        } catch (Exception e) {
+            log.error("Failed to parse cron expression: {}", cronExpression, e);
+            // Fallback: return current time + 1 hour
+            return currentTime.plusHours(1);
+        }
+    }
+}
