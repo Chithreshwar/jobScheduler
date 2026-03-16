@@ -1,6 +1,6 @@
 package com.scheduler.domain;
 
-public enum JobExecutionStatus {
+public enum ExecutionStatus {
     STARTED,
     SUCCESS,
     FAILED

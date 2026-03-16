@@ -1,21 +1,7 @@
 package com.scheduler.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.Lob;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -29,13 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(
-        name = "jobs",
-        indexes = {
-                @Index(name = "idx_jobs_next_execution_time", columnList = "next_execution_time"),
-                @Index(name = "idx_jobs_status", columnList = "status")
-        }
-)
+@Table(name = "jobs", indexes = {@Index(name = "idx_jobs_next_execution_time", columnList = "next_execution_time"), @Index(name = "idx_jobs_status", columnList = "status")})
 @EntityListeners(AuditingEntityListener.class)
 public class Job {
 
@@ -63,7 +43,6 @@ public class Job {
     @Column(name = "max_retries", nullable = false)
     private int maxRetries;
 
-    @Lob
     @Column(name = "payload", columnDefinition = "TEXT")
     private String payload;
 

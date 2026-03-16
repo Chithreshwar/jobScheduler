@@ -2,7 +2,7 @@ package com.scheduler.service;
 
 import com.scheduler.domain.Job;
 import com.scheduler.domain.JobExecution;
-import com.scheduler.domain.JobExecutionStatus;
+import com.scheduler.domain.ExecutionStatus;
 import com.scheduler.repository.JobExecutionRepository;
 import com.scheduler.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +27,12 @@ public class JobExecutionServiceImpl implements JobExecutionService {
     public void executeJob(Job job) {
         LocalDateTime now = LocalDateTime.now();
 
+        log.info("Starting execution for job: id={}, name={}", job.getId(), job.getName());
+
         // 1. Create JobExecution entity with STARTED status
         JobExecution execution = JobExecution.builder()
                 .job(job)
-                .status(JobExecutionStatus.STARTED)
+                .status(ExecutionStatus.STARTED)
                 .startTime(now)
                 .retryAttempt(job.getRetryCount())
                 .build();
@@ -47,7 +49,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 
             if (success) {
                 // Success case
-                execution.setStatus(JobExecutionStatus.SUCCESS);
+                execution.setStatus(ExecutionStatus.SUCCESS);
                 execution.setEndTime(LocalDateTime.now());
 
                 job.setRetryCount(0);
@@ -57,29 +59,29 @@ public class JobExecutionServiceImpl implements JobExecutionService {
                 log.info("Job {} executed successfully. Next execution: {}", job.getName(), job.getNextExecutionTime());
             } else {
                 // Failure case
-                execution.setStatus(JobExecutionStatus.FAILED);
+                execution.setStatus(ExecutionStatus.FAILED);
                 execution.setEndTime(LocalDateTime.now());
-                execution.setErrorMessage("Simulated random failure");
+                execution.setErrorMessage("Simulated execution failure");
 
                 job.setRetryCount(job.getRetryCount() + 1);
                 jobRepository.save(job);
 
-                log.warn("Job {} execution failed. Retry count: {}", job.getName(), job.getRetryCount());
+                log.info("Job {} execution failed. Retry count: {}", job.getName(), job.getRetryCount());
             }
 
             jobExecutionRepository.save(execution);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            execution.setStatus(JobExecutionStatus.FAILED);
+            execution.setStatus(ExecutionStatus.FAILED);
             execution.setEndTime(LocalDateTime.now());
-            execution.setErrorMessage("Execution interrupted: " + e.getMessage());
+            execution.setErrorMessage(e.getMessage());
             jobExecutionRepository.save(execution);
             log.error("Job {} execution interrupted", job.getName(), e);
         } catch (Exception e) {
-            execution.setStatus(JobExecutionStatus.FAILED);
+            execution.setStatus(ExecutionStatus.FAILED);
             execution.setEndTime(LocalDateTime.now());
-            execution.setErrorMessage("Execution error: " + e.getMessage());
+            execution.setErrorMessage(e.getMessage());
             jobExecutionRepository.save(execution);
             log.error("Job {} execution failed with error", job.getName(), e);
         }

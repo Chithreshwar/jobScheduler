@@ -21,13 +21,25 @@ public class JobPollingScheduler {
     @Scheduled(fixedDelay = 5000)
     public void pollScheduledJobs() {
         LocalDateTime now = LocalDateTime.now();
+        log.debug("JobPollingScheduler tick at={}", now);
+
         List<Job> scheduledJobs =
                 jobRepository.findTop100ByStatusAndNextExecutionTimeLessThanEqualOrderByNextExecutionTimeAsc(
                         JobStatus.SCHEDULED,
                         now
                 );
 
-        log.debug("JobPollingScheduler found {} scheduled jobs ready for execution", scheduledJobs.size());
+        log.info("JobPollingScheduler found {} scheduled jobs ready for execution", scheduledJobs.size());
+
+        for (Job job : scheduledJobs) {
+            tryExecuteJob(job);
+        }
+    }
+
+    private void tryExecuteJob(Job job) {
+        log.info("Attempting to execute job: id={}", job.getId());
+        log.info("Scheduled job ready: id={}, name={}, nextExecutionTime={}",
+                job.getId(), job.getName(), job.getNextExecutionTime());
     }
 }
 
