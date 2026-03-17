@@ -63,10 +63,27 @@ public class JobExecutionServiceImpl implements JobExecutionService {
                 execution.setEndTime(LocalDateTime.now());
                 execution.setErrorMessage("Simulated execution failure");
 
-                job.setRetryCount(job.getRetryCount() + 1);
-                jobRepository.save(job);
+                int retryCount = job.getRetryCount() + 1;
+                job.setRetryCount(retryCount);
 
-                log.info("Job {} execution failed. Retry count: {}", job.getName(), job.getRetryCount());
+                if (retryCount <= job.getMaxRetries()) {
+                    long delaySeconds;
+                    switch (retryCount) {
+                        case 1 -> delaySeconds = 10L;
+                        case 2 -> delaySeconds = 30L;
+                        case 3 -> delaySeconds = 60L;
+                        default -> delaySeconds = 60L;
+                    }
+
+                    LocalDateTime nextTime = now.plusSeconds(delaySeconds);
+                    job.setNextExecutionTime(nextTime);
+                    log.info("Job failed. Scheduling retry {} in {} seconds", retryCount, delaySeconds);
+                } else {
+                    job.setStatus(com.scheduler.domain.JobStatus.FAILED);
+                    log.warn("Job {} exceeded max retries. Marking FAILED", job.getName());
+                }
+
+                jobRepository.save(job);
             }
 
             jobExecutionRepository.save(execution);
