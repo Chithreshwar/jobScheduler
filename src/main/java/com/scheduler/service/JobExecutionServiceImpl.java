@@ -25,6 +25,8 @@ public class JobExecutionServiceImpl implements JobExecutionService {
     @Override
     @Transactional
     public void executeJob(Job job) {
+        log.info("Running job {} in thread {}", job.getId(), Thread.currentThread().getName());
+
         LocalDateTime now = LocalDateTime.now();
 
         log.info("Starting execution for job: id={}, name={}", job.getId(), job.getName());
