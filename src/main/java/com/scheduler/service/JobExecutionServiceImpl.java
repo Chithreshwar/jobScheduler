@@ -22,6 +22,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 
     private final JobRepository jobRepository;
     private final JobExecutionRepository jobExecutionRepository;
+    private final DeadLetterJobService deadLetterJobService;
 
     @Override
     @Transactional
@@ -86,6 +87,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
                 } else {
                     job.setStatus(JobStatus.FAILED);
                     log.warn("Job {} exceeded max retries. Marking FAILED", job.getName());
+                    deadLetterJobService.moveToDLQ(job, execution.getErrorMessage());
                 }
 
                 jobRepository.save(job);
