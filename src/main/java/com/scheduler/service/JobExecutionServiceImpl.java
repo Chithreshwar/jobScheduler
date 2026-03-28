@@ -3,6 +3,7 @@ package com.scheduler.service;
 import com.scheduler.domain.Job;
 import com.scheduler.domain.JobExecution;
 import com.scheduler.domain.ExecutionStatus;
+import com.scheduler.domain.JobStatus;
 import com.scheduler.repository.JobExecutionRepository;
 import com.scheduler.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
                 execution.setEndTime(LocalDateTime.now());
 
                 job.setRetryCount(0);
+                job.setStatus(JobStatus.ACTIVE);
                 job.setNextExecutionTime(computeNextExecutionTime(job.getCronExpression(), now));
                 jobRepository.save(job);
 
@@ -79,9 +81,10 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 
                     LocalDateTime nextTime = now.plusSeconds(delaySeconds);
                     job.setNextExecutionTime(nextTime);
+                    job.setStatus(JobStatus.ACTIVE);
                     log.info("Job failed. Scheduling retry {} in {} seconds", retryCount, delaySeconds);
                 } else {
-                    job.setStatus(com.scheduler.domain.JobStatus.FAILED);
+                    job.setStatus(JobStatus.FAILED);
                     log.warn("Job {} exceeded max retries. Marking FAILED", job.getName());
                 }
 
