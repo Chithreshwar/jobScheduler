@@ -1,6 +1,7 @@
 package com.scheduler.api.dto;
 
 import com.scheduler.domain.Job;
+import com.scheduler.domain.JobPriority;
 import com.scheduler.domain.JobStatus;
 import lombok.Data;
 
@@ -13,6 +14,7 @@ public class JobResponse {
     private String name;
     private String cronExpression;
     private JobStatus status;
+    private JobPriority priority;
     private LocalDateTime nextExecutionTime;
     private int retryCount;
     private int maxRetries;
@@ -26,6 +28,7 @@ public class JobResponse {
         response.setName(job.getName());
         response.setCronExpression(job.getCronExpression());
         response.setStatus(job.getStatus());
+        response.setPriority(job.getPriority());
         response.setNextExecutionTime(job.getNextExecutionTime());
         response.setRetryCount(job.getRetryCount());
         response.setMaxRetries(job.getMaxRetries());

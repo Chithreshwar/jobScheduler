@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface JobRepository extends JpaRepository<Job, UUID> {
 
-    List<Job> findTop100ByStatusAndNextExecutionTimeLessThanEqualOrderByNextExecutionTimeAsc(
+    List<Job> findTop100ByStatusAndNextExecutionTimeLessThanEqualOrderByPriorityDescNextExecutionTimeAsc(
             JobStatus status,
             LocalDateTime time
     );

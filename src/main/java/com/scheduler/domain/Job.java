@@ -35,6 +35,16 @@ public class Job {
     @Column(name = "status", nullable = false)
     private JobStatus status;
 
+    /**
+     * Scheduling order among due jobs (higher first). Persisted as NOT NULL with default MEDIUM;
+     * {@link #getPriority()} treats null as MEDIUM for safety.
+     */
+    @Getter(AccessLevel.NONE)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "priority", nullable = false, length = 20)
+    @Builder.Default
+    private JobPriority priority = JobPriority.MEDIUM;
+
     @Column(name = "next_execution_time")
     private LocalDateTime nextExecutionTime;
 
@@ -54,5 +64,17 @@ public class Job {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    @PreUpdate
+    void normalizePriority() {
+        if (priority == null) {
+            priority = JobPriority.MEDIUM;
+        }
+    }
+
+    public JobPriority getPriority() {
+        return priority != null ? priority : JobPriority.MEDIUM;
+    }
 }
 

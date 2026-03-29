@@ -1,5 +1,6 @@
 package com.scheduler.api.dto;
 
+import com.scheduler.domain.JobPriority;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
@@ -19,4 +20,7 @@ public class CreateJobRequest {
     private Integer maxRetries;
     
     private String payload;
+
+    /** Optional; defaults to MEDIUM when omitted. */
+    private JobPriority priority;
 }

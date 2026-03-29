@@ -33,15 +33,12 @@ public class JobPollingScheduler {
         log.debug("JobPollingScheduler tick at={}", now);
 
         List<Job> dueJobs =
-                jobRepository.findTop100ByStatusAndNextExecutionTimeLessThanEqualOrderByNextExecutionTimeAsc(
+                jobRepository.findTop100ByStatusAndNextExecutionTimeLessThanEqualOrderByPriorityDescNextExecutionTimeAsc(
                         JobStatus.ACTIVE,
                         now
                 );
 
         log.info("JobPollingScheduler picked {} active job(s) due for execution", dueJobs.size());
-        if (!dueJobs.isEmpty()) {
-            log.info("Scheduling job id(s): {}", dueJobs.stream().map(Job::getId).toList());
-        }
 
         for (Job job : dueJobs) {
             tryExecuteJob(job);
@@ -49,6 +46,7 @@ public class JobPollingScheduler {
     }
 
     private void tryExecuteJob(Job job) {
+        log.info("Scheduling job id={}, priority={}", job.getId(), job.getPriority());
         log.info("Attempting to execute job: id={}, name={}", job.getId(), job.getName());
 
         try {

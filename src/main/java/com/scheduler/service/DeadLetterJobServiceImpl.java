@@ -4,6 +4,7 @@ import com.scheduler.service.exception.DlqAlreadyRequeuedException;
 import com.scheduler.service.exception.DlqEntryNotFoundException;
 import com.scheduler.domain.DeadLetterJob;
 import com.scheduler.domain.Job;
+import com.scheduler.domain.JobPriority;
 import com.scheduler.domain.JobStatus;
 import com.scheduler.repository.DeadLetterJobRepository;
 import com.scheduler.repository.JobRepository;
@@ -104,6 +105,7 @@ public class DeadLetterJobServiceImpl implements DeadLetterJobService {
                 .name(dlq.getJobName())
                 .cronExpression(dlq.getCronExpression())
                 .status(JobStatus.ACTIVE)
+                .priority(JobPriority.MEDIUM)
                 .retryCount(0)
                 .maxRetries(dlq.getMaxRetries())
                 .payload(dlq.getPayload())
