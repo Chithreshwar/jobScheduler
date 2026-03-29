@@ -1,10 +1,10 @@
-package com.scheduler.service;
+package com.scheduler.service.core;
 
 import com.scheduler.api.dto.CreateJobRequest;
 import com.scheduler.api.dto.JobResponse;
 import com.scheduler.domain.Job;
-import com.scheduler.domain.JobPriority;
-import com.scheduler.domain.JobStatus;
+import com.scheduler.enums.JobPriority;
+import com.scheduler.enums.JobStatus;
 import com.scheduler.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

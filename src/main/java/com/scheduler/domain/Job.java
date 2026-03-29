@@ -1,5 +1,7 @@
 package com.scheduler.domain;
 
+import com.scheduler.enums.JobPriority;
+import com.scheduler.enums.JobStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

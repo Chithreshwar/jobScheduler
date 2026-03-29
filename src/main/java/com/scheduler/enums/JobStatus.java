@@ -1,8 +1,11 @@
-package com.scheduler.domain;
+package com.scheduler.enums;
+
+import com.scheduler.domain.Job;
 
 /**
  * Lifecycle state for a {@link Job} definition, not individual run outcomes.
- * Run outcomes (STARTED, SUCCESS, FAILED) belong in {@link com.scheduler.domain.JobExecution} / {@link ExecutionStatus}.
+ * Run outcomes (STARTED, SUCCESS, FAILED) belong in {@link com.scheduler.domain.JobExecution} /
+ * {@link ExecutionStatus}.
  * <p>
  * Scheduling is controlled by {@link Job#getNextExecutionTime()} while the job is {@link #ACTIVE}, not by
  * status transitions such as a separate "scheduled" state.

@@ -2,7 +2,7 @@ package com.scheduler.api;
 
 import com.scheduler.api.dto.CreateJobRequest;
 import com.scheduler.api.dto.JobResponse;
-import com.scheduler.service.JobService;
+import com.scheduler.service.core.JobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

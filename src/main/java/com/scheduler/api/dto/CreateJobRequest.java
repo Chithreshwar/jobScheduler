@@ -1,6 +1,6 @@
 package com.scheduler.api.dto;
 
-import com.scheduler.domain.JobPriority;
+import com.scheduler.enums.JobPriority;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;

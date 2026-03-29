@@ -1,4 +1,4 @@
-package com.scheduler.service;
+package com.scheduler.service.core;
 
 import com.scheduler.domain.Job;
 

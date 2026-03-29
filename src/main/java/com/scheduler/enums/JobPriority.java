@@ -1,4 +1,4 @@
-package com.scheduler.domain;
+package com.scheduler.enums;
 
 /**
  * Relative importance for scheduling order among due jobs (HIGH, MEDIUM, LOW).

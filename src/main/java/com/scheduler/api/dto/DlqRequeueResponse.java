@@ -1,7 +1,7 @@
 package com.scheduler.api.dto;
 
 import com.scheduler.domain.Job;
-import com.scheduler.domain.JobStatus;
+import com.scheduler.enums.JobStatus;
 import lombok.Builder;
 import lombok.Data;
 

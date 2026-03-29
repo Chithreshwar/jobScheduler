@@ -1,4 +1,4 @@
-package com.scheduler.service;
+package com.scheduler.service.lock;
 
 public interface RedisLockService {
 

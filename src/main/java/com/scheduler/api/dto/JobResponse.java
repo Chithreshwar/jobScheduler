@@ -1,8 +1,8 @@
 package com.scheduler.api.dto;
 
 import com.scheduler.domain.Job;
-import com.scheduler.domain.JobPriority;
-import com.scheduler.domain.JobStatus;
+import com.scheduler.enums.JobPriority;
+import com.scheduler.enums.JobStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;

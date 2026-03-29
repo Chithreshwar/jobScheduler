@@ -1,9 +1,8 @@
-package com.scheduler.scheduler;
+package com.scheduler.service.core;
 
 import com.scheduler.domain.Job;
-import com.scheduler.domain.JobStatus;
+import com.scheduler.enums.JobStatus;
 import com.scheduler.repository.JobRepository;
-import com.scheduler.service.JobExecutionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -56,4 +55,3 @@ public class JobPollingScheduler {
         }
     }
 }
-

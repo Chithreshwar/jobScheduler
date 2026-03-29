@@ -1,4 +1,4 @@
-package com.scheduler.service;
+package com.scheduler.service.lock;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +21,7 @@ public class RedisLockServiceImpl implements RedisLockService {
             ThreadLocal.withInitial(HashMap::new);
 
     private static final DefaultRedisScript<Long> RELEASE_SCRIPT = new DefaultRedisScript<>();
+
     static {
         RELEASE_SCRIPT.setScriptText(
                 "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end"
@@ -34,10 +35,9 @@ public class RedisLockServiceImpl implements RedisLockService {
     public boolean acquireLock(String key, long timeoutMillis) {
         String token = UUID.randomUUID().toString();
         Boolean acquired = stringRedisTemplate.opsForValue()
-                .setIfAbsent(key, token, Duration.ofMillis(timeoutMillis));// saving in redis - key and token
+                .setIfAbsent(key, token, Duration.ofMillis(timeoutMillis));
         if (Boolean.TRUE.equals(acquired)) {
-            Map<String, String> map = LOCK_TOKENS.get(); // saving in thread local for thread for future reference to release lock - key and token
-            map.put(key, token);
+            LOCK_TOKENS.get().put(key, token);
             return true;
         }
         return false;

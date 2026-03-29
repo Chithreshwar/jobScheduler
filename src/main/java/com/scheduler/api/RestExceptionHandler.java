@@ -1,8 +1,8 @@
 package com.scheduler.api;
 
 import com.scheduler.api.dto.ApiErrorResponse;
-import com.scheduler.service.exception.DlqAlreadyRequeuedException;
-import com.scheduler.service.exception.DlqEntryNotFoundException;
+import com.scheduler.service.dlq.exception.DlqAlreadyRequeuedException;
+import com.scheduler.service.dlq.exception.DlqEntryNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

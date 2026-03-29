@@ -1,11 +1,13 @@
-package com.scheduler.service;
+package com.scheduler.service.core;
 
 import com.scheduler.domain.Job;
 import com.scheduler.domain.JobExecution;
-import com.scheduler.domain.ExecutionStatus;
-import com.scheduler.domain.JobStatus;
+import com.scheduler.enums.ExecutionStatus;
+import com.scheduler.enums.JobStatus;
 import com.scheduler.repository.JobExecutionRepository;
 import com.scheduler.repository.JobRepository;
+import com.scheduler.service.dlq.DeadLetterJobService;
+import com.scheduler.service.lock.RedisLockService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
@@ -90,7 +92,6 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 
         log.info("Starting execution for job: id={}, name={}", job.getId(), job.getName());
 
-        // 1. Create JobExecution entity with STARTED status
         JobExecution execution = JobExecution.builder()
                 .job(job)
                 .status(ExecutionStatus.STARTED)
@@ -101,15 +102,12 @@ public class JobExecutionServiceImpl implements JobExecutionService {
         execution = jobExecutionRepository.save(execution);
 
         try {
-            // 2. Simulate execution: print payload and sleep 1 second
             log.info("Executing job: {} - Payload: {}", job.getName(), job.getPayload());
             Thread.sleep(1000);
 
-            // 3. Simulate random failure (30% chance)
             boolean success = Math.random() > 0.3;
 
             if (success) {
-                // Success case
                 execution.setStatus(ExecutionStatus.SUCCESS);
                 execution.setEndTime(LocalDateTime.now());
 
@@ -119,7 +117,6 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 
                 log.info("Job {} executed successfully. Next execution: {}", job.getName(), job.getNextExecutionTime());
             } else {
-                // Failure case
                 execution.setStatus(ExecutionStatus.FAILED);
                 execution.setEndTime(LocalDateTime.now());
                 execution.setErrorMessage("Simulated execution failure");
@@ -173,7 +170,6 @@ public class JobExecutionServiceImpl implements JobExecutionService {
                     .toLocalDateTime();
         } catch (Exception e) {
             log.error("Failed to parse cron expression: {}", cronExpression, e);
-            // Fallback: return current time + 1 hour
             return currentTime.plusHours(1);
         }
     }

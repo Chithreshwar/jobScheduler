@@ -1,5 +1,6 @@
 package com.scheduler.domain;
 
+import com.scheduler.enums.ExecutionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

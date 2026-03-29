@@ -1,4 +1,4 @@
-package com.scheduler.service;
+package com.scheduler.service.dlq;
 
 import com.scheduler.domain.DeadLetterJob;
 import com.scheduler.domain.Job;

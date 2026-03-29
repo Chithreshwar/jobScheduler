@@ -1,13 +1,13 @@
-package com.scheduler.service;
+package com.scheduler.service.dlq;
 
-import com.scheduler.service.exception.DlqAlreadyRequeuedException;
-import com.scheduler.service.exception.DlqEntryNotFoundException;
 import com.scheduler.domain.DeadLetterJob;
 import com.scheduler.domain.Job;
-import com.scheduler.domain.JobPriority;
-import com.scheduler.domain.JobStatus;
+import com.scheduler.enums.JobPriority;
+import com.scheduler.enums.JobStatus;
 import com.scheduler.repository.DeadLetterJobRepository;
 import com.scheduler.repository.JobRepository;
+import com.scheduler.service.dlq.exception.DlqAlreadyRequeuedException;
+import com.scheduler.service.dlq.exception.DlqEntryNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

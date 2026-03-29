@@ -1,4 +1,4 @@
-package com.scheduler.service.exception;
+package com.scheduler.service.dlq.exception;
 
 public class DlqEntryNotFoundException extends RuntimeException {
 
