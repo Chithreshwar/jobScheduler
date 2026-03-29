@@ -6,10 +6,12 @@ import com.scheduler.enums.JobPriority;
 import com.scheduler.enums.JobStatus;
 import com.scheduler.repository.DeadLetterJobRepository;
 import com.scheduler.repository.JobRepository;
+import com.intelliflow.ai.JobFailureEvent;
 import com.scheduler.service.dlq.exception.DlqAlreadyRequeuedException;
 import com.scheduler.service.dlq.exception.DlqEntryNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class DeadLetterJobServiceImpl implements DeadLetterJobService {
 
     private final DeadLetterJobRepository deadLetterJobRepository;
     private final JobRepository jobRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -32,7 +35,7 @@ public class DeadLetterJobServiceImpl implements DeadLetterJobService {
         LocalDateTime now = LocalDateTime.now();
         UUID sourceId = job.getId();
 
-        return deadLetterJobRepository.findByJobIdAndRequeuedIsFalse(sourceId)
+        DeadLetterJob saved = deadLetterJobRepository.findByJobIdAndRequeuedIsFalse(sourceId)
                 .map(existing -> {
                     existing.setErrorMessage(errorMessage);
                     existing.setFailedAt(now);
@@ -57,10 +60,21 @@ public class DeadLetterJobServiceImpl implements DeadLetterJobService {
                             .requeued(false)
                             .createdAt(now)
                             .build();
-                    DeadLetterJob saved = deadLetterJobRepository.save(row);
-                    log.info("Moved job to DLQ: dlqId={}, jobId={}, jobName={}", saved.getId(), sourceId, job.getName());
-                    return saved;
+                    DeadLetterJob rowSaved = deadLetterJobRepository.save(row);
+                    log.info("Moved job to DLQ: dlqId={}, jobId={}, jobName={}", rowSaved.getId(), sourceId, job.getName());
+                    return rowSaved;
                 });
+
+        eventPublisher.publishEvent(
+                new JobFailureEvent(
+                        job.getId(),
+                        errorMessage,
+                        null,
+                        job.getName()
+                )
+        );
+
+        return saved;
     }
 
     @Override

@@ -116,51 +116,66 @@ public class JobExecutionServiceImpl implements JobExecutionService {
                 jobRepository.save(job);
 
                 log.info("Job {} executed successfully. Next execution: {}", job.getName(), job.getNextExecutionTime());
+                jobExecutionRepository.save(execution);
             } else {
-                execution.setStatus(ExecutionStatus.FAILED);
-                execution.setEndTime(LocalDateTime.now());
-                execution.setErrorMessage("Simulated execution failure");
-
-                int retryCount = job.getRetryCount() + 1;
-                job.setRetryCount(retryCount);
-
-                if (retryCount <= job.getMaxRetries()) {
-                    long delaySeconds;
-                    switch (retryCount) {
-                        case 1 -> delaySeconds = 10L;
-                        case 2 -> delaySeconds = 30L;
-                        case 3 -> delaySeconds = 60L;
-                        default -> delaySeconds = 60L;
-                    }
-
-                    LocalDateTime nextTime = now.plusSeconds(delaySeconds);
-                    job.setNextExecutionTime(nextTime);
-                    log.info("Job failed. Scheduling retry {} in {} seconds", retryCount, delaySeconds);
-                } else {
-                    job.setStatus(JobStatus.FAILED);
-                    log.warn("Job {} exceeded max retries. Marking FAILED", job.getName());
-                    deadLetterJobService.moveToDLQ(job, execution.getErrorMessage());
-                }
-
-                jobRepository.save(job);
+                applyFailureAnalysisAndRetry(job, execution, now, "Simulated execution failure");
             }
-
-            jobExecutionRepository.save(execution);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            execution.setStatus(ExecutionStatus.FAILED);
-            execution.setEndTime(LocalDateTime.now());
-            execution.setErrorMessage(e.getMessage());
-            jobExecutionRepository.save(execution);
             log.error("Job {} execution interrupted", job.getName(), e);
+            applyFailureAnalysisAndRetry(job, execution, now, e.getMessage());
         } catch (Exception e) {
-            execution.setStatus(ExecutionStatus.FAILED);
-            execution.setEndTime(LocalDateTime.now());
-            execution.setErrorMessage(e.getMessage());
-            jobExecutionRepository.save(execution);
             log.error("Job {} execution failed with error", job.getName(), e);
+            applyFailureAnalysisAndRetry(job, execution, now, e.getMessage());
         }
+    }
+
+    /**
+     * Records failure, then retries while {@code retryCount <= maxRetries}; when max retries are exceeded,
+     * marks the job {@link JobStatus#FAILED} and moves it to the DLQ.
+     */
+    private void applyFailureAnalysisAndRetry(
+            Job job,
+            JobExecution execution,
+            LocalDateTime now,
+            String errorMessage) {
+
+        String safeMessage = errorMessage != null ? errorMessage : "";
+
+        execution.setStatus(ExecutionStatus.FAILED);
+        execution.setEndTime(LocalDateTime.now());
+        execution.setErrorMessage(safeMessage);
+
+        int retryCount = job.getRetryCount() + 1;
+        job.setRetryCount(retryCount);
+
+        if (retryCount <= job.getMaxRetries()) {
+            long delaySeconds = delaySecondsForAttempt(retryCount);
+            LocalDateTime nextTime = now.plusSeconds(delaySeconds);
+            job.setNextExecutionTime(nextTime);
+            log.info("Job failed. Scheduling retry {} in {} seconds", retryCount, delaySeconds);
+        } else {
+            job.setStatus(JobStatus.FAILED);
+            log.warn("Job {} exceeded max retries. Marking FAILED and moving to DLQ", job.getName());
+            deadLetterJobService.moveToDLQ(job, formatDlqMessage(safeMessage));
+        }
+
+        jobRepository.save(job);
+        jobExecutionRepository.save(execution);
+    }
+
+    private static String formatDlqMessage(String baseError) {
+        return baseError;
+    }
+
+    private static long delaySecondsForAttempt(int retryCount) {
+        return switch (retryCount) {
+            case 1 -> 10L;
+            case 2 -> 30L;
+            case 3 -> 60L;
+            default -> 60L;
+        };
     }
 
     private LocalDateTime computeNextExecutionTime(String cronExpression, LocalDateTime currentTime) {

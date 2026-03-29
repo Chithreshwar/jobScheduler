@@ -2,11 +2,11 @@ package com.scheduler;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableAsync
+@ComponentScan(basePackages = {"com.scheduler", "com.intelliflow.ai"})
 @EnableScheduling
 public class DistributedJobSchedulerApplication {
 

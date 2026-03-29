@@ -35,3 +35,7 @@ logging:
     org.springframework: INFO
 server:
   port: 8080
+# Google Gemini (see com.intelliflow.ai.GeminiFailureAnalyzer). Set GEMINI_API_KEY in your environment.
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  url: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent

@@ -59,6 +59,18 @@ public class Job {
     @Column(name = "payload", columnDefinition = "TEXT")
     private String payload;
 
+    @Column(name = "ai_root_cause", columnDefinition = "TEXT")
+    private String aiRootCause;
+
+    @Column(name = "ai_suggestion", columnDefinition = "TEXT")
+    private String aiSuggestion;
+
+    @Column(name = "ai_severity", length = 50)
+    private String aiSeverity;
+
+    @Column(name = "ai_decision")
+    private Boolean aiDecision;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
