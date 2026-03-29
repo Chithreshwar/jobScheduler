@@ -30,6 +30,7 @@ public class Job {
     @Column(name = "cron_expression", nullable = false)
     private String cronExpression;
 
+    /** Definition lifecycle only; scheduling uses {@link #nextExecutionTime} while ACTIVE. */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private JobStatus status;

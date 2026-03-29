@@ -1,10 +1,12 @@
 package com.scheduler.service;
 
 import com.scheduler.domain.Job;
-import org.springframework.scheduling.annotation.Async;
+
+import java.util.UUID;
 
 public interface JobExecutionService {
 
-    @Async("jobExecutor")
     void executeJob(Job job);
+
+    void executeJobAsync(UUID jobId);
 }

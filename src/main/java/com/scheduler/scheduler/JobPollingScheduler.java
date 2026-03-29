@@ -13,6 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Polls for jobs that are due for execution. Which runs are due is determined by
+ * {@link Job#getNextExecutionTime()} and {@link JobStatus#ACTIVE}, not by moving the job through a
+ * "scheduled" status — execution attempts are tracked in {@code job_executions}.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -39,7 +44,6 @@ public class JobPollingScheduler {
         }
 
         for (Job job : dueJobs) {
-            job.setStatus(JobStatus.SCHEDULED);
             tryExecuteJob(job);
         }
     }
@@ -48,9 +52,9 @@ public class JobPollingScheduler {
         log.info("Attempting to execute job: id={}, name={}", job.getId(), job.getName());
 
         try {
-            jobExecutionService.executeJob(job);
+            jobExecutionService.executeJobAsync(job.getId());
         } catch (Exception e) {
-            log.error("Error executing job id={}", job.getId(), e);
+            log.error("Error submitting async execution for job id={}", job.getId(), e);
         }
     }
 }

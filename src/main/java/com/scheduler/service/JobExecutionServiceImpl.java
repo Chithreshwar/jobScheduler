@@ -6,23 +6,80 @@ import com.scheduler.domain.ExecutionStatus;
 import com.scheduler.domain.JobStatus;
 import com.scheduler.repository.JobExecutionRepository;
 import com.scheduler.repository.JobRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class JobExecutionServiceImpl implements JobExecutionService {
+
+    private static final long JOB_LOCK_TTL_MILLIS = 30_000L;
 
     private final JobRepository jobRepository;
     private final JobExecutionRepository jobExecutionRepository;
     private final DeadLetterJobService deadLetterJobService;
+    private final RedisLockService redisLockService;
+    private final JobExecutionService self;
+
+    public JobExecutionServiceImpl(
+            JobRepository jobRepository,
+            JobExecutionRepository jobExecutionRepository,
+            DeadLetterJobService deadLetterJobService,
+            RedisLockService redisLockService,
+            @Lazy JobExecutionService self) {
+        this.jobRepository = jobRepository;
+        this.jobExecutionRepository = jobExecutionRepository;
+        this.deadLetterJobService = deadLetterJobService;
+        this.redisLockService = redisLockService;
+        this.self = self;
+    }
+
+    @Override
+    @Async("jobExecutor")
+    public void executeJobAsync(UUID jobId) {
+        String lockKey = "job-lock:" + jobId;
+        boolean acquired;
+        try {
+            acquired = redisLockService.acquireLock(lockKey, JOB_LOCK_TTL_MILLIS);
+        } catch (Exception e) {
+            log.error("Redis lock acquire failed for jobId={}, key={}", jobId, lockKey, e);
+            return;
+        }
+        if (!acquired) {
+            log.info(
+                    "Skipped job execution; distributed lock not acquired (another instance or in-flight): jobId={}, key={}",
+                    jobId,
+                    lockKey
+            );
+            return;
+        }
+        log.info("Acquired distributed lock for jobId={}, key={}, ttlMillis={}", jobId, lockKey, JOB_LOCK_TTL_MILLIS);
+        try {
+            Job job = jobRepository.findById(jobId).orElse(null);
+            if (job == null) {
+                log.warn("Job not found after lock acquired, skipping: jobId={}", jobId);
+                return;
+            }
+            self.executeJob(job);
+        } catch (Exception e) {
+            log.error("Error during executeJobAsync for jobId={}", jobId, e);
+        } finally {
+            try {
+                redisLockService.releaseLock(lockKey);
+                log.info("Released distributed lock for jobId={}, key={}", jobId, lockKey);
+            } catch (Exception e) {
+                log.warn("Failed to release distributed lock for jobId={}, key={}", jobId, lockKey, e);
+            }
+        }
+    }
 
     @Override
     @Transactional
@@ -57,7 +114,6 @@ public class JobExecutionServiceImpl implements JobExecutionService {
                 execution.setEndTime(LocalDateTime.now());
 
                 job.setRetryCount(0);
-                job.setStatus(JobStatus.ACTIVE);
                 job.setNextExecutionTime(computeNextExecutionTime(job.getCronExpression(), now));
                 jobRepository.save(job);
 
@@ -82,7 +138,6 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 
                     LocalDateTime nextTime = now.plusSeconds(delaySeconds);
                     job.setNextExecutionTime(nextTime);
-                    job.setStatus(JobStatus.ACTIVE);
                     log.info("Job failed. Scheduling retry {} in {} seconds", retryCount, delaySeconds);
                 } else {
                     job.setStatus(JobStatus.FAILED);
